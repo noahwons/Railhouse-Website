@@ -2,36 +2,35 @@ const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
 
-router.post('/', (req, res) => {
-  const { name, email, phone, message, subject } = req.body;
+router.post('/', async (req, res) => {
+  const { name, email, message } = req.body;
 
   if (!name || !email || !message) {
-    return res.status(400).json({ error: 'Name, email, and message are required' });
+    return res.status(400).json({ error: 'Name, email, and message are required.' });
   }
 
-  // In production, send an email here using nodemailer
-
-  nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: process.env.EMAIL_SECURE === 'true',
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT || 587,
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
     },
-  }).sendMail({
-    from: `"${name}" <${email}>`,
-    to: process.env.CONTACT_EMAIL,
-    subject: subject || 'New Contact Form Submission',
-    text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone || 'N/A'}\n\nMessage:\n${message}`,
-  }, (err) => {
-    if (err) {
-      console.error('Error sending email:', err);
-      return res.status(500).json({ error: 'Failed to send message. Please try again later.' });
-    }
   });
 
-  res.json({ success: true, message: 'Thank you for reaching out! We will get back to you soon.' });
+  try {
+    await transporter.sendMail({
+      from: `"${name}" <${process.env.SMTP_USER}>`,
+      to: process.env.CONTACT_EMAIL,
+      replyTo: email,
+      subject: `Contact form message from ${name}`,
+      text: message,
+    });
+    res.json({ success: true, message: 'Message sent successfully.' });
+  } catch (err) {
+    console.error('Email send error:', err);
+    res.status(500).json({ error: 'Failed to send message.' });
+  }
 });
 
 module.exports = router;
