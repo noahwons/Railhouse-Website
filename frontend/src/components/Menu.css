@@ -131,6 +131,13 @@
   height: auto;
 }
 
+.menu-pdf-frame {
+  display: block;
+  width: 100%;
+  height: 80vh;
+  border: none;
+}
+
 .menu-actions {
   display: flex;
   gap: 12px;
