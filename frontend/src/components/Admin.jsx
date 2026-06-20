@@ -54,17 +54,18 @@ function MenuTab({ apiKey }) {
         headers: { 'x-admin-key': apiKey },
         body: formData,
       })
-      const data = await res.json()
+      let data = {}
+      try { data = await res.json() } catch {}
       if (res.ok) {
         setCurrentUrl(data.url)
         setFile(null)
         e.target.reset()
         setStatus({ type: 'success', message: 'Menu updated successfully.' })
       } else {
-        setStatus({ type: 'error', message: data.error || 'Upload failed.' })
+        setStatus({ type: 'error', message: `${res.status} ${res.statusText}: ${data.error || 'No error body'}` })
       }
-    } catch {
-      setStatus({ type: 'error', message: 'Network error. Please try again.' })
+    } catch (err) {
+      setStatus({ type: 'error', message: `Fetch failed: ${err.message}` })
     }
     setLoading(false)
   }
@@ -130,14 +131,15 @@ function EventsTab({ apiKey }) {
         headers: { 'Content-Type': 'application/json', 'x-admin-key': apiKey },
         body: JSON.stringify(events),
       })
-      const data = await res.json()
+      let data = {}
+      try { data = await res.json() } catch {}
       if (res.ok) {
         setStatus({ type: 'success', message: 'Events saved successfully.' })
       } else {
-        setStatus({ type: 'error', message: data.error || 'Save failed.' })
+        setStatus({ type: 'error', message: `${res.status} ${res.statusText}: ${data.error || 'No error body'}` })
       }
-    } catch {
-      setStatus({ type: 'error', message: 'Network error. Please try again.' })
+    } catch (err) {
+      setStatus({ type: 'error', message: `Fetch failed: ${err.message}` })
     }
     setSaving(false)
   }
