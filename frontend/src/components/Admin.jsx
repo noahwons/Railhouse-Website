@@ -1,5 +1,17 @@
 import { useState, useEffect } from 'react'
 
+const DEFAULT_ABOUT = {
+  subtitle: 'Your neighborhood bar and grill with a whole lot of personality',
+  paragraph1: "Railhouse Bar & Grill is more than just a restaurant—it's a destination. Nestled in the heart of the community, we've been bringing people together over great food, cold drinks, and unforgettable entertainment.",
+  paragraph2: "Whether you're here for our world-famous wings, a round of slots, live music on the weekend, or just to unwind after a long day, the Railhouse is your home away from home.",
+  features: [
+    { id: 1, icon: '🎰', title: 'Slots Gaming', description: 'Try your luck on our exciting selection of slot machines for entertainment.' },
+    { id: 2, icon: '🍗', title: 'Award-Winning Wings', description: 'From classic buffalo to Nashville hot, our wings are made fresh daily.' },
+    { id: 3, icon: '🍺', title: 'Full Bar', description: 'Craft beers on tap, premium spirits, and handcrafted cocktails.' },
+    { id: 4, icon: '🎵', title: 'Live Entertainment', description: 'Live music, trivia nights, and weekly events to keep the good times rolling.' },
+  ],
+}
+
 const DEFAULT_EVENTS = [
   { id: 1, title: 'Wing Wednesday', description: '50% off all wing orders every Wednesday night', day: 'Every Wednesday', time: '5:00 PM - Close', recurring: true },
   { id: 2, title: 'Happy Hour', description: '$1 off all draft beers and well drinks', day: 'Monday - Friday', time: '3:00 PM - 6:00 PM', recurring: true },
@@ -25,6 +37,99 @@ const s = {
   btnDanger: { padding: '0.35rem 0.75rem', background: 'transparent', color: '#f44336', border: '1px solid #f4433655', borderRadius: 4, cursor: 'pointer', fontSize: '0.8rem' },
   eventCard: { background: '#252525', border: '1px solid #333', borderRadius: 6, padding: '1rem', marginBottom: '0.75rem' },
   row: { display: 'flex', gap: 8, alignItems: 'center' },
+}
+
+function AboutTab({ apiKey }) {
+  const [about, setAbout] = useState(null)
+  const [status, setStatus] = useState(null)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/admin/about')
+      .then(r => r.json())
+      .then(data => setAbout(data || DEFAULT_ABOUT))
+      .catch(() => setAbout(DEFAULT_ABOUT))
+  }, [])
+
+  const updateField = (field, value) => setAbout(a => ({ ...a, [field]: value }))
+
+  const updateFeature = (id, field, value) => {
+    setAbout(a => ({ ...a, features: a.features.map(f => f.id === id ? { ...f, [field]: value } : f) }))
+  }
+
+  const addFeature = () => {
+    setAbout(a => ({ ...a, features: [...a.features, { id: Date.now(), icon: '', title: '', description: '' }] }))
+  }
+
+  const deleteFeature = id => {
+    setAbout(a => ({ ...a, features: a.features.filter(f => f.id !== id) }))
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    setStatus(null)
+    try {
+      const res = await fetch('/api/admin/about', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': apiKey },
+        body: JSON.stringify(about),
+      })
+      let data = {}
+      try { data = await res.json() } catch {}
+      if (res.ok) {
+        setStatus({ type: 'success', message: 'About section saved successfully.' })
+      } else {
+        setStatus({ type: 'error', message: `${res.status} ${res.statusText}: ${data.error || 'No error body'}` })
+      }
+    } catch (err) {
+      setStatus({ type: 'error', message: `Fetch failed: ${err.message}` })
+    }
+    setSaving(false)
+  }
+
+  if (!about) return <p style={{ color: '#666' }}>Loading...</p>
+
+  const textarea = { ...s.input, resize: 'vertical', lineHeight: 1.5 }
+
+  return (
+    <div style={{ maxWidth: 680 }}>
+      <div style={s.field}>
+        <label style={s.label}>Subtitle</label>
+        <input value={about.subtitle} onChange={e => updateField('subtitle', e.target.value)} style={s.input} />
+      </div>
+      <div style={s.field}>
+        <label style={s.label}>Paragraph 1</label>
+        <textarea value={about.paragraph1} onChange={e => updateField('paragraph1', e.target.value)} rows={4} style={textarea} />
+      </div>
+      <div style={s.field}>
+        <label style={s.label}>Paragraph 2</label>
+        <textarea value={about.paragraph2} onChange={e => updateField('paragraph2', e.target.value)} rows={4} style={textarea} />
+      </div>
+
+      <hr style={s.divider} />
+      <p style={{ ...s.label, marginBottom: '1rem' }}>Feature Cards</p>
+
+      {about.features.map(f => (
+        <div key={f.id} style={s.eventCard}>
+          <div style={{ ...s.row, marginBottom: 8, justifyContent: 'space-between' }}>
+            <input value={f.icon} onChange={e => updateFeature(f.id, 'icon', e.target.value)} placeholder="Icon (emoji)" style={{ ...s.input, width: 80, flex: 'none' }} />
+            <input value={f.title} onChange={e => updateFeature(f.id, 'title', e.target.value)} placeholder="Title" style={{ ...s.input, flex: 1 }} />
+            <button onClick={() => deleteFeature(f.id)} style={s.btnDanger}>Remove</button>
+          </div>
+          <input value={f.description} onChange={e => updateFeature(f.id, 'description', e.target.value)} placeholder="Description" style={s.input} />
+        </div>
+      ))}
+
+      <button onClick={addFeature} style={{ ...s.btnGhost, marginBottom: '1.5rem' }}>+ Add Card</button>
+
+      <div>
+        {status && <p style={status.type === 'success' ? s.success : s.error}>{status.message}</p>}
+        <button onClick={handleSave} disabled={saving} style={{ ...s.btn, ...(saving ? { opacity: 0.6, cursor: 'not-allowed' } : {}) }}>
+          {saving ? 'Saving...' : 'Save Changes'}
+        </button>
+      </div>
+    </div>
+  )
 }
 
 function MenuTab({ apiKey }) {
@@ -231,10 +336,12 @@ export default function Admin() {
       <div style={s.tabs}>
         <button style={s.tab(tab === 'menu')} onClick={() => setTab('menu')}>Menu</button>
         <button style={s.tab(tab === 'events')} onClick={() => setTab('events')}>Events & Specials</button>
+        <button style={s.tab(tab === 'about')} onClick={() => setTab('about')}>About</button>
       </div>
 
       {tab === 'menu' && <MenuTab apiKey={apiKey} />}
       {tab === 'events' && <EventsTab apiKey={apiKey} />}
+      {tab === 'about' && <AboutTab apiKey={apiKey} />}
     </div>
   )
 }
