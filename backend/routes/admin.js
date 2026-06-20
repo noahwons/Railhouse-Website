@@ -42,11 +42,12 @@ router.post('/menu', requireAdmin, upload.single('file'), async (req, res) => {
       access: 'public',
       contentType: req.file.mimetype,
       addRandomSuffix: false,
+      allowOverwrite: true,
     });
     res.json({ url: blob.url });
   } catch (err) {
     console.error('Upload error:', err);
-    res.status(500).json({ error: 'Failed to upload menu.' });
+    res.status(500).json({ error: err.message || 'Failed to upload menu.' });
   }
 });
 
@@ -59,11 +60,12 @@ router.put('/events', requireAdmin, async (req, res) => {
       access: 'public',
       contentType: 'application/json',
       addRandomSuffix: false,
+      allowOverwrite: true,
     });
     res.json({ success: true, url: blob.url });
   } catch (err) {
     console.error('Events save error:', err);
-    res.status(500).json({ error: 'Failed to save events.' });
+    res.status(500).json({ error: err.message || 'Failed to save events.' });
   }
 });
 
