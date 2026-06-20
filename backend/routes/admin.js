@@ -50,4 +50,21 @@ router.post('/menu', requireAdmin, upload.single('file'), async (req, res) => {
   }
 });
 
+router.put('/events', requireAdmin, async (req, res) => {
+  const events = req.body;
+  if (!Array.isArray(events)) return res.status(400).json({ error: 'Events must be an array.' });
+
+  try {
+    const blob = await put('events.json', JSON.stringify(events), {
+      access: 'public',
+      contentType: 'application/json',
+      addRandomSuffix: false,
+    });
+    res.json({ success: true, url: blob.url });
+  } catch (err) {
+    console.error('Events save error:', err);
+    res.status(500).json({ error: 'Failed to save events.' });
+  }
+});
+
 module.exports = router;
