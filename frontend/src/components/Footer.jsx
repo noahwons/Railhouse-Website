@@ -34,8 +34,8 @@ export default function Footer() {
           <div className="footer-social">
             <h4>Follow Us</h4>
             <div className="social-links">
-              <a href="#" aria-label="Facebook" className="social-btn">f</a>
-              <a href="#" aria-label="Instagram" className="social-btn">ig</a>
+              <a href="http://m.facebook.com/RailHouseRoundLake" aria-label="Facebook" className="social-btn">f</a>
+              <a href="https://www.instagram.com/railhouse_roundlake?utm_source=qr" aria-label="Instagram" className="social-btn">ig</a>
               <a href="#" aria-label="Twitter" className="social-btn">tw</a>
             </div>
             <div className="footer-contact">
